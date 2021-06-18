@@ -1,0 +1,132 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch
+	http://www.springframework.org/schema/batch/spring-batch.xsd 
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<description>
+
+	</description>
+
+	<job id="FinecoAmlMensileJob"
+		xmlns="http://www.springframework.org/schema/batch">
+		<step id="CreateExcelLavorazioneStep">
+			<tasklet>
+				<chunk reader="customReader" writer="xlsFileWriter"
+					commit-interval="1">
+				</chunk>
+				<listeners>
+					<listener ref="countListener1" />
+				</listeners>
+			</tasklet>
+			<batch:next on="COMPLETED" to="sendMailOkStep" />
+			<batch:next on="FAILED" to="sendMailKoStep" />
+		</step>
+		<step id="sendMailOkStep">
+			<tasklet ref="sendMailOkTasklet" />
+		</step>
+		<step id="sendMailKoStep">
+			<tasklet ref="sendMailKoTasklet" />
+		</step>
+	</job>
+
+	<!-- === READER === -->
+	<bean id="customReader" class="it.gepo.engine.Reader" scope="step">
+		<property name="dataSource" ref="jobDataSource" />
+		<property name="query1"
+			value="#{jobParameters['query.daControllare']}" />
+		<property name="query2"
+			value="#{jobParameters['query.daLavorare']}" />
+	</bean>
+
+
+	<bean id="xlsFileWriter" class="it.gepo.engine.FileExcelWriter"
+		scope="step">
+		<property name="header"
+			value="#{jobParameters['xls.header']}" />
+		<property name="nomeFile"
+			value="#{jobParameters['xls.dir']}#{jobParameters['xls.fileName']}#{currentDate}#{jobParameters['xls.format']}" />
+	</bean>
+
+	<bean id="fastDateFormat"
+		class="org.apache.commons.lang.time.FastDateFormat"
+		factory-method="getInstance">
+		<constructor-arg value="MMyyyy" />
+	</bean>
+
+	<bean id="currentDate" class="java.util.Date"
+		factory-bean="fastDateFormat" factory-method="format">
+		<constructor-arg>
+			<bean class="java.util.Date" />
+		</constructor-arg>
+	</bean>
+
+	<!-- === LISTENER === -->
+	<bean id="countListener1"
+		class="it.gepo.engine.support.listener.CountStepExecutionListener"
+		scope="step" />
+
+	<!-- === DATASOURCE === -->
+	<bean id="jobDataSource"
+		class="org.apache.commons.dbcp.BasicDataSource" scope="job">
+		<property name="driverClassName"
+			value="#{jobParameters['conn.driver']}" />
+		<property name="url" value="#{jobParameters['conn.url']}" />
+		<property name="username"
+			value="#{jobParameters['conn.username']}" />
+		<property name="password"
+			value="#{jobParameters['conn.password']}" />
+	</bean>
+
+	<!-- === MAIL OK SENDER TASKLET === -->
+
+	<bean id="sendMailOkTasklet"
+		class="it.gepo.engine.support.tasklet.SendMailTasklet" scope="step">
+		<property name="mailSender" ref="delegatedMailSender"></property>
+		<property name="from" value="#{jobParameters['mail.from']}"></property>
+		<property name="recipients"
+			value="#{jobParameters['mail.indirizzo']}"></property>
+		<property name="title"
+			value="#{jobParameters['mail.oggetto']}"></property>
+		<property name="textGenerator">
+			<bean class="it.gepo.engine.support.utility.TextGenerator">
+				<property name="text"
+					value="DA LAVORARE: #{jobExecutionContext['lavorare']} \nDA CONTROLLARE: #{jobExecutionContext['controllare']}"></property>
+			</bean>
+		</property>
+		<property name="attachment"
+			value="file:#{jobParameters['xls.dir']}#{jobParameters['xls.fileName']}#{currentDate}#{jobParameters['xls.format']}" />
+
+	</bean>
+
+	<!-- === MAIL KO SENDER TASKLET === -->
+
+	<bean id="sendMailKoTasklet"
+		class="it.gepo.engine.support.tasklet.SendMailTasklet" scope="step">
+		<property name="mailSender" ref="delegatedMailSender"></property>
+		<property name="from" value="#{jobParameters['mail.from']}"></property>
+		<property name="recipients"
+			value="#{jobParameters['mail.indirizzo']}"></property>
+		<property name="title"
+			value="#{jobParameters['mail.oggetto']}"></property>
+		<property name="textGenerator">
+			<bean class="it.gepo.engine.support.utility.TextGenerator">
+				<property name="text"
+					value="Errore:\n #{jobExecutionContext['getSummary']}"></property>
+			</bean>
+		</property>
+		<property name="separateMails" value="true" />
+	</bean>
+
+	<!-- === MAIL SENDER === -->
+
+	<bean id="delegatedMailSender"
+		class="org.springframework.mail.javamail.JavaMailSenderImpl"
+		scope="step">
+		<property name="host" value="#{jobParameters['mail.smtp']}" />
+	</bean>
+
+</beans>
