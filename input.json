@@ -1,0 +1,52 @@
+{
+	"jobName": "FinecoAmlMensileJob",
+	"jobXmlFile": "job-FinecoAmlMensile.xml",
+	"jarName": "FinecoAmlMensile-0.0.1.jar",
+	"params": {
+		"mailOk.recipients": {
+			"value": "vincenzo.giacalone@c-global.it"
+		},
+		"query.daControllare": {
+			"value": "select ctrk_indici_fineco_av.id,NDG,CONTO,INTESTATARIO, MITTENTE_MAIL,OGGETTO_MAIL,nome_file_mail, ctrk_stati.nome_stato from ctrk_indici_fineco_av inner  join ctrk_tracking on ctrk_indici_fineco_av.id = ctrk_tracking.id inner join ctrk_stati on ctrk_tracking.stato_attuale=ctrk_stati.id where  ctrk_indici_fineco_av.id in (select distinct id_track from ctrk_stati_track where stato_old = 205 and data_modifica  BETWEEN TO_DATE(trunc(sysdate, 'MM')-1) AND SYSDATE)"
+		},
+		"conn.url": {
+			"value": "jdbc:oracle:thin:@gpocbp1o.ced.it:1522:GPOCBP1O"
+		},
+		"conn.username": {
+			"value": "proc_cflow"
+		},
+		"conn.password": {
+			"value": "proc_cflow"
+		},
+		"conn.driver": {
+			"value": "oracle.jdbc.driver.OracleDriver"
+		},
+		"mail.smtp": {
+			"value": "10.99.19.14"
+		},
+		"mail.from": {
+			"value": "it_cflow@c-global.it"
+		},
+		"mail.indirizzo": {
+			"value": "vincenzo.giacalone@c-global.it, lorenzo.silva@c-global.it"
+		},
+		"query.daLavorare": {
+			"value": "select ctrk_indici_fineco_av.id,NDG,CONTO,INTESTATARIO, MITTENTE_MAIL,OGGETTO_MAIL,nome_file_mail, ctrk_stati.nome_stato from ctrk_indici_fineco_av inner  join ctrk_tracking on ctrk_indici_fineco_av.id = ctrk_tracking.id inner join ctrk_stati on ctrk_tracking.stato_attuale=ctrk_stati.id where ctrk_indici_fineco_av.id in (select distinct id_track from ctrk_stati_track where stato_old = 206 and data_modifica BETWEEN TO_DATE(trunc(sysdate, 'MM')-1) AND SYSDATE)"
+		},
+		"xls.dir": {
+			"value": "C:\\Users\\axc0824\\Desktop\\job\\finecoAMLMensile\\dir\\"
+		},
+		"xls.fileName": {
+			"value": "ESTRAZIONE_FINECO_AML_"
+		},
+		"xls.format": {
+			"value": ".xlsx"
+		},
+		"xls.header": {
+			"value": "IDENTIFICATIVO;NDG;CONTO;INTESTATARIO;MITTENTE MAIL;OGGETTO MAIL;NOME FILE MAIL;STATO ATTUALE;"
+		},
+		"mail.oggetto": {
+			"value": "Estrazione Fineco AML"
+		}
+	}
+}
